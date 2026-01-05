@@ -16,10 +16,11 @@ body.dark-bg {
   box-shadow: 0 10px 30px rgba(0,0,0,.4);
 }
 
-.table-dark {
-  --bs-table-bg: transparent;
+.muted {
+  color: #9ca3af;
 }
 
+/* Table */
 th {
   font-size: 13px;
   color: #9ca3af;
@@ -30,6 +31,12 @@ td {
   font-size: 14px;
 }
 
+.total {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+/* Checkboxes */
 .form-check-input {
   background-color: #0f1115;
   border: 1px solid #374151;
@@ -42,15 +49,7 @@ td {
   border-color: #22c55e;
 }
 
-.total {
-  color: #22c55e;
-  font-weight: 600;
-}
-
-.muted {
-  color: #9ca3af;
-}
-
+/* Nav pills */
 .nav-pills .nav-link {
   color: #9ca3af;
 }
@@ -58,4 +57,27 @@ td {
 .nav-pills .nav-link.active {
   background-color: #22c55e;
   color: #0f1115;
+}
+
+/* Weekly tracker */
+.weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.week-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f1115;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.week-label {
+  font-size: 13px;
+  color: #9ca3af;
+  outline: none;
+  cursor: text;
 }

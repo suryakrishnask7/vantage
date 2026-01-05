@@ -1,4 +1,4 @@
-const STORAGE_KEY = "yearly-habit-tracker";
+const STORAGE_KEY = "yearly-habit-tracker-v3";
 const daysInMonth = 31;
 
 const months = [
@@ -7,30 +7,27 @@ const months = [
 ];
 
 let currentMonth = 0;
-
-// ---------- DATA ----------
 let data = loadFromStorage() || createDefaultData();
 
-// ---------- DOM ----------
+// DOM
 const monthTabs = document.getElementById("monthTabs");
 const tableHead = document.getElementById("tableHead");
 const tableBody = document.getElementById("habitTable");
+const goalText = document.getElementById("goalText");
+const goalCheck = document.getElementById("goalCheck");
+const weeklyTracker = document.getElementById("weeklyTracker");
 
-// ---------- MONTH TABS ----------
+// Month tabs
 months.forEach((m, i) => {
   const li = document.createElement("li");
   li.className = "nav-item";
-  li.innerHTML = `
-    <button class="nav-link ${i === 0 ? "active" : ""}">
-      ${m.slice(0,3)}
-    </button>`;
+  li.innerHTML = `<button class="nav-link ${i === 0 ? "active" : ""}">${m.slice(0,3)}</button>`;
   li.onclick = () => switchMonth(i);
   monthTabs.appendChild(li);
 });
 
-// ---------- CHART ----------
-const ctx = document.getElementById("habitChart");
-const chart = new Chart(ctx, {
+// Chart
+const chart = new Chart(document.getElementById("habitChart"), {
   type: "line",
   data: {
     labels: Array.from({ length: daysInMonth }, (_, i) => `Day ${i+1}`),
@@ -42,42 +39,58 @@ const chart = new Chart(ctx, {
     }]
   },
   options: {
-    responsive: true,
-    scales: {
-      y: { beginAtZero: true }
-    }
+    scales: { y: { beginAtZero: true } }
   }
 });
 
-// ---------- RENDER ----------
+// Render
 function render() {
-  const month = data[currentMonth];
+  const m = data[currentMonth];
 
+  // Goal
+  goalText.value = m.goal.text;
+  goalCheck.checked = m.goal.done;
+
+  // Weekly
+  weeklyTracker.innerHTML = "";
+  m.weeks.forEach((w, i) => {
+    const div = document.createElement("div");
+    div.className = "week-box";
+    div.innerHTML = `
+      <input type="checkbox" class="form-check-input"
+        ${w.done ? "checked" : ""}
+        onchange="toggleWeek(${i}, this.checked)">
+      <span class="week-label" contenteditable
+        onblur="renameWeek(${i}, this.innerText)">
+        ${w.label}
+      </span>
+    `;
+    weeklyTracker.appendChild(div);
+  });
+
+  // Table header
   tableHead.innerHTML = `
     <tr>
       <th>Day</th>
-      ${month.habits.map((h, i) =>
+      ${m.habits.map((h, i) =>
         `<th contenteditable onblur="renameHabit(${i}, this.innerText)">${h}</th>`
       ).join("")}
       <th>Total</th>
     </tr>`;
 
+  // Table body
   tableBody.innerHTML = "";
-
-  month.checks.forEach((row, d) => {
+  m.checks.forEach((row, d) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `<td class="muted">Day ${d+1}</td>`;
-
-    month.habits.forEach((_, h) => {
+    m.habits.forEach((_, h) => {
       tr.innerHTML += `
         <td>
-          <input type="checkbox"
-            class="form-check-input"
+          <input type="checkbox" class="form-check-input"
             ${row[h] ? "checked" : ""}
             onchange="toggle(${d},${h},this.checked)">
         </td>`;
     });
-
     tr.innerHTML += `<td class="total">${row.filter(Boolean).length}</td>`;
     tableBody.appendChild(tr);
   });
@@ -86,7 +99,7 @@ function render() {
   saveToStorage();
 }
 
-// ---------- ACTIONS ----------
+// Actions
 function toggle(day, habit, val) {
   data[currentMonth].checks[day][habit] = val;
   render();
@@ -97,15 +110,27 @@ function renameHabit(i, name) {
   saveToStorage();
 }
 
-function switchMonth(i) {
-  currentMonth = i;
-  document.querySelectorAll(".nav-link").forEach((t, idx) =>
-    t.classList.toggle("active", idx === i)
-  );
-  render();
+function toggleWeek(i, val) {
+  data[currentMonth].weeks[i].done = val;
+  saveToStorage();
 }
 
-// ---------- HABIT CONTROLS ----------
+function renameWeek(i, name) {
+  data[currentMonth].weeks[i].label = name || `Week ${i+1}`;
+  saveToStorage();
+}
+
+goalText.oninput = () => {
+  data[currentMonth].goal.text = goalText.value;
+  saveToStorage();
+};
+
+goalCheck.onchange = () => {
+  data[currentMonth].goal.done = goalCheck.checked;
+  saveToStorage();
+};
+
+// Habit controls
 document.getElementById("addHabit").onclick = () => {
   const m = data[currentMonth];
   m.habits.push(`Habit ${m.habits.length + 1}`);
@@ -121,7 +146,7 @@ document.getElementById("removeHabit").onclick = () => {
   render();
 };
 
-// ---------- CHART ----------
+// Chart
 function updateChart() {
   const totals = data[currentMonth].checks.map(r => r.filter(Boolean).length);
   chart.data.datasets[0].data = totals;
@@ -129,7 +154,7 @@ function updateChart() {
   chart.update();
 }
 
-// ---------- LOCAL STORAGE ----------
+// Storage
 function saveToStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
@@ -139,56 +164,52 @@ function loadFromStorage() {
   return raw ? JSON.parse(raw) : null;
 }
 
-// ---------- EXPORT JSON ----------
+// Export
 document.getElementById("exportJSON").onclick = () => {
-  const payload = {
-    app: "Yearly Habit Tracker",
-    exportedAt: new Date().toISOString(),
-    data
-  };
-
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/json"
-  });
-
+  const blob = new Blob(
+    [JSON.stringify({ exportedAt: new Date(), data }, null, 2)],
+    { type: "application/json" }
+  );
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "habit-tracker-backup.json";
   a.click();
-  URL.revokeObjectURL(a.href);
 };
 
-// ---------- IMPORT JSON ----------
-document.getElementById("importJSON").addEventListener("change", function () {
-  const file = this.files[0];
-  if (!file) return;
-
+// Import
+document.getElementById("importJSON").onchange = function () {
   const reader = new FileReader();
   reader.onload = e => {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (!Array.isArray(imported.data)) throw "Invalid";
-
-      data = imported.data;
+    const parsed = JSON.parse(e.target.result);
+    if (parsed.data) {
+      data = parsed.data;
       saveToStorage();
       switchMonth(0);
-      alert("Data imported successfully ✔");
-    } catch {
-      alert("Invalid JSON file");
     }
   };
+  reader.readAsText(this.files[0]);
+};
 
-  reader.readAsText(file);
-  this.value = "";
-});
-
-// ---------- DEFAULT DATA ----------
+// Default data
 function createDefaultData() {
   return months.map(() => ({
     habits: ["Habit 1", "Habit 2", "Habit 3"],
-    checks: Array.from({ length: daysInMonth }, () => [false,false,false])
+    checks: Array.from({ length: daysInMonth }, () => [false,false,false]),
+    goal: { text: "", done: false },
+    weeks: Array.from({ length: 5 }, (_, i) => ({
+      label: `Week ${i + 1}`,
+      done: false
+    }))
   }));
 }
 
-// ---------- INIT ----------
+function switchMonth(i) {
+  currentMonth = i;
+  document.querySelectorAll(".nav-link").forEach((t, idx) =>
+    t.classList.toggle("active", idx === i)
+  );
+  render();
+}
+
+// Init
 render();
