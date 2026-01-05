@@ -1,52 +1,40 @@
-/* Base */
 body.dark-bg {
-  background-color: #0f1115;
+  background: #0f1115;
   color: #e5e7eb;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: Inter, system-ui, sans-serif;
 }
 
-/* Title */
 .title {
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
-/* Cards */
 .dark-card {
-  background-color: #161a22;
+  background: #161a22;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
   border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
 }
 
-/* Table */
 .table-dark {
   --bs-table-bg: transparent;
-  --bs-table-striped-color: #9ca3af;
 }
 
 th {
-  font-weight: 500;
-  color: #9ca3af;
   font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
 }
 
 td {
   font-size: 14px;
 }
 
-td.total {
-  color: #22c55e;
-  font-weight: 600;
-}
-
-/* Checkboxes */
 .form-check-input {
-  width: 18px;
-  height: 18px;
   background-color: #0f1115;
   border: 1px solid #374151;
-  cursor: pointer;
+  width: 18px;
+  height: 18px;
 }
 
 .form-check-input:checked {
@@ -54,12 +42,20 @@ td.total {
   border-color: #22c55e;
 }
 
-/* Muted text */
+.total {
+  color: #22c55e;
+  font-weight: 600;
+}
+
 .muted {
   color: #9ca3af;
 }
 
-/* Chart canvas */
-canvas {
-  max-height: 350px;
+.nav-pills .nav-link {
+  color: #9ca3af;
+}
+
+.nav-pills .nav-link.active {
+  background-color: #22c55e;
+  color: #0f1115;
 }

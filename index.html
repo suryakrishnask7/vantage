@@ -23,10 +23,16 @@
   <!-- Month Tabs -->
   <ul class="nav nav-pills justify-content-center mb-4" id="monthTabs"></ul>
 
-  <!-- Habit Controls -->
-  <div class="d-flex justify-content-center gap-2 mb-4">
+  <!-- Controls -->
+  <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap">
     <button class="btn btn-outline-success btn-sm" id="addHabit">➕ Add Habit</button>
     <button class="btn btn-outline-danger btn-sm" id="removeHabit">➖ Remove Habit</button>
+    <button class="btn btn-outline-info btn-sm" id="exportJSON">⬇ Export JSON</button>
+
+    <label class="btn btn-outline-warning btn-sm mb-0">
+      ⬆ Import JSON
+      <input type="file" id="importJSON" accept=".json" hidden>
+    </label>
   </div>
 
   <!-- Table -->
