@@ -36,17 +36,30 @@
     </div>
   </div>
 
-  <!-- Habit Controls -->
-  <div class="d-flex justify-content-center gap-2 mb-3 flex-wrap">
-    <button class="btn btn-outline-success btn-sm" id="addHabit">Add Habit</button>
-    <button class="btn btn-outline-danger btn-sm" id="removeHabit">Remove Habit</button>
-    <button class="btn btn-outline-info btn-sm" id="exportJSON">Export JSON</button>
+<!-- Habit Controls -->
+<div class="d-flex justify-content-center gap-2 mb-3 flex-wrap align-items-center">
 
-    <label class="btn btn-outline-warning btn-sm mb-0">
-      Import JSON
-      <input type="file" id="importJSON" accept=".json" hidden>
-    </label>
-  </div>
+  <button class="btn btn-outline-success btn-sm" id="addHabit">Add Habit</button>
+  <button class="btn btn-outline-danger btn-sm" id="removeHabit">Remove Habit</button>
+
+  <select id="copyFromMonth"
+          class="form-select form-select-sm bg-dark text-light border-secondary"
+          style="width: 140px;">
+  </select>
+
+  <button class="btn btn-outline-primary btn-sm" id="copyHabits">
+    Copy Habits
+  </button>
+
+  <button class="btn btn-outline-info btn-sm" id="exportJSON">Export JSON</button>
+
+  <label class="btn btn-outline-warning btn-sm mb-0">
+    Import JSON
+    <input type="file" id="importJSON" accept=".json" hidden>
+  </label>
+
+</div>
+
 
   <!-- Habit Table -->
   <div class="card dark-card mb-4">

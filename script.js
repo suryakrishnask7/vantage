@@ -1,4 +1,7 @@
-const STORAGE_KEY = "yearly-habit-tracker-v3";
+/***********************
+ * CONFIG & CONSTANTS
+ ***********************/
+const STORAGE_KEY = "yearly-habit-tracker-v4";
 const daysInMonth = 31;
 
 const months = [
@@ -6,31 +9,47 @@ const months = [
   "July","August","September","October","November","December"
 ];
 
+/***********************
+ * STATE
+ ***********************/
 let currentMonth = 0;
 let data = loadFromStorage() || createDefaultData();
 
-// DOM
+/***********************
+ * DOM REFERENCES
+ ***********************/
 const monthTabs = document.getElementById("monthTabs");
 const tableHead = document.getElementById("tableHead");
 const tableBody = document.getElementById("habitTable");
+
 const goalText = document.getElementById("goalText");
 const goalCheck = document.getElementById("goalCheck");
+
 const weeklyTracker = document.getElementById("weeklyTracker");
 
-// Month tabs
+const copyFromSelect = document.getElementById("copyFromMonth");
+
+/***********************
+ * MONTH TABS
+ ***********************/
 months.forEach((m, i) => {
   const li = document.createElement("li");
   li.className = "nav-item";
-  li.innerHTML = `<button class="nav-link ${i === 0 ? "active" : ""}">${m.slice(0,3)}</button>`;
+  li.innerHTML = `
+    <button class="nav-link ${i === 0 ? "active" : ""}">
+      ${m.slice(0,3)}
+    </button>`;
   li.onclick = () => switchMonth(i);
   monthTabs.appendChild(li);
 });
 
-// Chart
+/***********************
+ * CHART
+ ***********************/
 const chart = new Chart(document.getElementById("habitChart"), {
   type: "line",
   data: {
-    labels: Array.from({ length: daysInMonth }, (_, i) => `Day ${i+1}`),
+    labels: Array.from({ length: daysInMonth }, (_, i) => `Day ${i + 1}`),
     datasets: [{
       data: [],
       borderColor: "#22c55e",
@@ -39,28 +58,35 @@ const chart = new Chart(document.getElementById("habitChart"), {
     }]
   },
   options: {
-    scales: { y: { beginAtZero: true } }
+    responsive: true,
+    scales: {
+      y: { beginAtZero: true }
+    }
   }
 });
 
-// Render
+/***********************
+ * RENDER
+ ***********************/
 function render() {
   const m = data[currentMonth];
 
-  // Goal
+  /* Monthly goal */
   goalText.value = m.goal.text;
   goalCheck.checked = m.goal.done;
 
-  // Weekly
+  /* Weekly tracker */
   weeklyTracker.innerHTML = "";
   m.weeks.forEach((w, i) => {
     const div = document.createElement("div");
     div.className = "week-box";
     div.innerHTML = `
-      <input type="checkbox" class="form-check-input"
+      <input type="checkbox"
+        class="form-check-input"
         ${w.done ? "checked" : ""}
         onchange="toggleWeek(${i}, this.checked)">
-      <span class="week-label" contenteditable
+      <span class="week-label"
+        contenteditable
         onblur="renameWeek(${i}, this.innerText)">
         ${w.label}
       </span>
@@ -68,7 +94,7 @@ function render() {
     weeklyTracker.appendChild(div);
   });
 
-  // Table header
+  /* Table header */
   tableHead.innerHTML = `
     <tr>
       <th>Day</th>
@@ -78,48 +104,60 @@ function render() {
       <th>Total</th>
     </tr>`;
 
-  // Table body
+  /* Table body */
   tableBody.innerHTML = "";
   m.checks.forEach((row, d) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="muted">Day ${d+1}</td>`;
+    tr.innerHTML = `<td class="muted">Day ${d + 1}</td>`;
+
     m.habits.forEach((_, h) => {
       tr.innerHTML += `
         <td>
-          <input type="checkbox" class="form-check-input"
+          <input type="checkbox"
+            class="form-check-input"
             ${row[h] ? "checked" : ""}
-            onchange="toggle(${d},${h},this.checked)">
+            onchange="toggle(${d}, ${h}, this.checked)">
         </td>`;
     });
+
     tr.innerHTML += `<td class="total">${row.filter(Boolean).length}</td>`;
     tableBody.appendChild(tr);
   });
 
   updateChart();
+  populateCopyDropdown();
   saveToStorage();
 }
 
-// Actions
+/***********************
+ * DAILY HABITS
+ ***********************/
 function toggle(day, habit, val) {
   data[currentMonth].checks[day][habit] = val;
   render();
 }
 
 function renameHabit(i, name) {
-  data[currentMonth].habits[i] = name || `Habit ${i+1}`;
+  data[currentMonth].habits[i] = name || `Habit ${i + 1}`;
   saveToStorage();
 }
 
+/***********************
+ * WEEKLY
+ ***********************/
 function toggleWeek(i, val) {
   data[currentMonth].weeks[i].done = val;
   saveToStorage();
 }
 
 function renameWeek(i, name) {
-  data[currentMonth].weeks[i].label = name || `Week ${i+1}`;
+  data[currentMonth].weeks[i].label = name || `Week ${i + 1}`;
   saveToStorage();
 }
 
+/***********************
+ * MONTHLY GOAL
+ ***********************/
 goalText.oninput = () => {
   data[currentMonth].goal.text = goalText.value;
   saveToStorage();
@@ -130,7 +168,9 @@ goalCheck.onchange = () => {
   saveToStorage();
 };
 
-// Habit controls
+/***********************
+ * HABIT CONTROLS
+ ***********************/
 document.getElementById("addHabit").onclick = () => {
   const m = data[currentMonth];
   m.habits.push(`Habit ${m.habits.length + 1}`);
@@ -146,7 +186,45 @@ document.getElementById("removeHabit").onclick = () => {
   render();
 };
 
-// Chart
+/***********************
+ * COPY HABITS BETWEEN MONTHS
+ ***********************/
+function populateCopyDropdown() {
+  copyFromSelect.innerHTML = "";
+  months.forEach((m, i) => {
+    if (i !== currentMonth) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = m;
+      copyFromSelect.appendChild(opt);
+    }
+  });
+}
+
+document.getElementById("copyHabits").onclick = () => {
+  const fromIndex = parseInt(copyFromSelect.value);
+  if (isNaN(fromIndex)) return;
+
+  if (!confirm(
+    `Copy habits from ${months[fromIndex]} to ${months[currentMonth]}?\n` +
+    `Daily progress will be reset.`
+  )) return;
+
+  const source = data[fromIndex];
+  const target = data[currentMonth];
+
+  target.habits = [...source.habits];
+  target.checks = Array.from({ length: daysInMonth }, () =>
+    Array(target.habits.length).fill(false)
+  );
+
+  saveToStorage();
+  render();
+};
+
+/***********************
+ * CHART
+ ***********************/
 function updateChart() {
   const totals = data[currentMonth].checks.map(r => r.filter(Boolean).length);
   chart.data.datasets[0].data = totals;
@@ -154,7 +232,9 @@ function updateChart() {
   chart.update();
 }
 
-// Storage
+/***********************
+ * STORAGE
+ ***********************/
 function saveToStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
@@ -164,37 +244,53 @@ function loadFromStorage() {
   return raw ? JSON.parse(raw) : null;
 }
 
-// Export
+/***********************
+ * EXPORT JSON
+ ***********************/
 document.getElementById("exportJSON").onclick = () => {
   const blob = new Blob(
-    [JSON.stringify({ exportedAt: new Date(), data }, null, 2)],
+    [JSON.stringify({ exportedAt: new Date().toISOString(), data }, null, 2)],
     { type: "application/json" }
   );
+
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "habit-tracker-backup.json";
   a.click();
+  URL.revokeObjectURL(a.href);
 };
 
-// Import
+/***********************
+ * IMPORT JSON
+ ***********************/
 document.getElementById("importJSON").onchange = function () {
+  const file = this.files[0];
+  if (!file) return;
+
   const reader = new FileReader();
   reader.onload = e => {
-    const parsed = JSON.parse(e.target.result);
-    if (parsed.data) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.data) throw "Invalid";
+
       data = parsed.data;
       saveToStorage();
       switchMonth(0);
+    } catch {
+      alert("Invalid JSON file");
     }
   };
-  reader.readAsText(this.files[0]);
+  reader.readAsText(file);
+  this.value = "";
 };
 
-// Default data
+/***********************
+ * DEFAULT DATA
+ ***********************/
 function createDefaultData() {
   return months.map(() => ({
     habits: ["Habit 1", "Habit 2", "Habit 3"],
-    checks: Array.from({ length: daysInMonth }, () => [false,false,false]),
+    checks: Array.from({ length: daysInMonth }, () => [false, false, false]),
     goal: { text: "", done: false },
     weeks: Array.from({ length: 5 }, (_, i) => ({
       label: `Week ${i + 1}`,
@@ -203,6 +299,9 @@ function createDefaultData() {
   }));
 }
 
+/***********************
+ * MONTH SWITCH
+ ***********************/
 function switchMonth(i) {
   currentMonth = i;
   document.querySelectorAll(".nav-link").forEach((t, idx) =>
@@ -211,5 +310,8 @@ function switchMonth(i) {
   render();
 }
 
-// Init
+/***********************
+ * INIT
+ ***********************/
+populateCopyDropdown();
 render();
